@@ -1,0 +1,1467 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Task Horizon - Dashboard</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/interactjs/dist/interact.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css" />
+  <style>
+    body { visibility: hidden; }
+  </style>
+</head>
+<body>
+  <div class="dashboard">
+    <!-- Left Sidebar -->
+    <div class="sidebar" id="sidebar">
+      <div class="logo">
+        <i class="fas fa-tasks task-icon"></i>
+        <h2>Task Horizon</h2>
+      </div>
+      <button class="toggle-btn" onclick="toggleSidebar()">☰</button>
+      
+      <div class="sidebar-buttons">
+        <button class="task-btn" data-type="all" onclick="setView('all')">
+          <i class="fas fa-tasks"></i> All Tasks <span class="badge" id="all-count">(0)</span>
+        </button>
+        <button class="task-btn active" data-type="my" onclick="setView('my')">
+          <i class="fas fa-user"></i> My Tasks <span class="badge" id="my-count">(0)</span>
+        </button>
+        <button class="task-btn" data-type="assigned" onclick="setView('assigned')">
+          <i class="fas fa-users"></i> Assigned Tasks <span class="badge" id="assigned-count">(0)</span>
+        </button>
+        <button class="task-btn" data-type="team" onclick="setView('team')">
+          <i class="fas fa-user-friends"></i> Team Management
+        </button>
+      </div>
+      
+      <div class="user-section">
+        <div class="avatar-sidebar"><span id="user-initials">--</span></div>
+        <div class="user-info">
+          <span id="user-greeting">Loading...</span>
+          <span class="user-role" id="user-role">User</span>
+        </div>
+        <button onclick="logout()" class="logout-btn"><i class="fas fa-sign-out-alt"></i></button>
+      </div>
+    </div>
+    <!-- Main Content Area -->
+    <div class="control-panel">
+      <!-- Page Header -->
+      <div class="header">
+        <div class="header-title">
+          <h2>My Tasks</h2>
+          <p>View and manage your assigned tasks</p>
+        </div>
+        <div class="theme-toggle">
+          <button onclick="toggleTheme()">Toggle Theme</button>
+        </div>
+      </div>
+      
+      <!-- Main Content Grid -->
+      <div id="tasks-main-view" class="content-grid main-view">
+        <!-- Task Table Section -->
+        <div class="task-table-section">
+          <h3>All Tasks</h3>
+          <table id="tasks-table">
+            <thead>
+              <tr>
+                <th>Task Name</th>
+                <th>Start Date</th>
+                <th>End Date</th>
+                <th>Priority</th>
+                <th>Status</th>
+                <th id="assignedToHeader">Assigned To</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="tasks">
+              <!-- Tasks will be populated dynamically -->
+              <tr>
+                <td colspan="7" class="text-center">Loading tasks...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        
+        <!-- Task Status Widget (Hidden in All Tasks view) -->
+        <div class="widget task-status" id="task-status-widget">
+          <h3>Task Status</h3>
+          <div class="status-items">
+            <div class="status-item">
+              <span>In Progress</span>
+              <span class="status-count" id="in-progress-count">0</span>
+            </div>
+            <div class="status-item">
+              <span>Completed</span>
+              <span class="status-count" id="completed-count">0</span>
+            </div>
+            <div class="status-item">
+              <span>Pending</span>
+              <span class="status-count" id="pending-count">0</span>
+            </div>
+            <div class="status-item">
+              <span>Not Yet Started</span>
+              <span class="status-count" id="not-yet-started-count">0</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- Team Management Main View -->
+      <div id="team-management-view" class="main-view" style="display:none">
+        <div class="widget team-management-widget">
+          <h3>Team Management</h3>
+          <div class="team-management-container">
+            <div class="team-list-section">
+              <div class="team-list-header">
+                <h4>My Teams</h4>
+                <button class="styled-add-btn" onclick="showCreateTeamForm()">
+                  <i class="fas fa-plus"></i> Create New Team
+                </button>
+              </div>
+              <div class="teams-container" id="teams-container">
+                <p>Loading teams...</p>
+              </div>
+            </div>
+            <div class="team-details-section" id="team-details-section" style="display: none;">
+              <div class="team-info">
+                <h4 id="current-team-name">Team Name</h4>
+                <p id="current-team-description">Team description will appear here.</p>
+              </div>
+              <div class="members-management">
+                <h4>Team Members</h4>
+                <div class="members-list" id="members-list">
+                  <p>Select a team to view members</p>
+                </div>
+                <form id="addMemberForm" class="add-member-form">
+                  <h4>Add New Member</h4>
+                  <div class="form-row">
+                    <div class="form-group">
+                      <label for="memberName">Name</label>
+                      <input type="text" id="memberName" placeholder="Enter name" required>
+                    </div>
+                    <div class="form-group">
+                      <label for="memberEmail">Email</label>
+                      <input type="email" id="memberEmail" placeholder="Enter email" required>
+                    </div>
+                  </div>
+                  <button type="button" onclick="addTeamMember()" class="styled-add-btn">
+                    <i class="fas fa-user-plus"></i> Add Member
+                  </button>
+                </form>
+              </div>
+            </div>
+            <div class="create-team-section" id="create-team-section" style="display: none;">
+              <h4>Create New Team</h4>
+              <form id="createTeamForm">
+                <div class="form-group">
+                  <label for="teamName">Team Name</label>
+                  <input type="text" id="teamName" placeholder="Enter team name" required>
+                </div>
+                <div class="form-group">
+                  <label for="teamDescription">Description</label>
+                  <textarea id="teamDescription" placeholder="Describe the purpose of this team" rows="3"></textarea>
+                </div>
+                <div class="form-actions">
+                  <button type="button" onclick="createTeam()" class="styled-add-btn">
+                    <i class="fas fa-check"></i> Create Team
+                  </button>
+                  <button type="button" onclick="showTeamsList()" class="cancel-btn">
+                    <i class="fas fa-times"></i> Cancel
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Task Actions Modal (hidden by default) -->
+    <div id="taskActionsModal" class="modal" style="display: none;">
+      <div class="modal-content">
+        <span class="close-modal" onclick="closeTaskModal()">×</span>
+        <h3>Task Actions</h3>
+        <div class="modal-actions">
+          <button id="editTaskBtn" onclick="editTask()">Edit</button>
+          <button id="completeTaskBtn" onclick="toggleTaskCompletion()">Mark as Complete</button>
+          <button id="deleteTaskBtn" onclick="deleteTask()">Delete</button>
+        </div>
+      </div>
+    </div>
+
+  <script>
+    let tasks = [];
+    let currentView = 'my';
+    let userData = null;
+    let currentTaskId = null;
+    const currentDate = new Date('2025-04-13'); // Set to current date (April 13, 2025)
+    let teams = [];
+    let currentTeam = null;
+
+    // Initialize page
+    document.addEventListener('DOMContentLoaded', function() {
+      fetch('/api/auth/user', { 
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' }
+      })
+      .then(res => {
+        if (!res.ok) throw new Error('Not authenticated');
+        return res.json();
+      })
+      .then(data => {
+        document.body.style.visibility = 'visible';
+        // Initialize dashboard here
+        initDashboard(data.user);
+      })
+      .catch(() => {
+        window.location.href = '/';
+      });
+    });
+
+    function initDashboard(user) {
+      // Check if user is authenticated
+      userData = user;
+      
+      // Set user initials
+      const names = userData.name.split(' ');
+      if (names.length > 0) {
+        const initials = names.map(name => name.charAt(0)).join('');
+        document.getElementById('user-initials').textContent = initials;
+      }
+      
+      // Set user greeting
+      document.getElementById('user-greeting').textContent = userData.name;
+      
+      // Fetch tasks after authentication is confirmed
+      fetchTasks();
+      
+      // Set up search functionality
+      document.getElementById('taskSearch').addEventListener('input', function(e) {
+        loadTasks(e.target.value.toLowerCase());
+      });
+    }
+
+    // Check if user is authenticated
+    async function checkAuth() {
+      try {
+        const response = await fetch('/api/auth/user', {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          credentials: 'include'
+        });
+        
+        if (!response.ok) {
+          throw new Error('Not authenticated');
+        }
+        
+        const data = await response.json();
+        if (data.success && data.user) {
+          userData = data.user;
+          
+          // Set user initials
+          const names = userData.name.split(' ');
+          if (names.length > 0) {
+            const initials = names.map(name => name.charAt(0)).join('');
+            document.getElementById('user-initials').textContent = initials;
+          }
+          
+          // Set user greeting
+          document.getElementById('user-greeting').textContent = userData.name;
+          
+          return userData;
+        } else {
+          throw new Error('Authentication failed');
+        }
+      } catch (error) {
+        console.error('Auth check error:', error);
+        throw error;
+      }
+    }
+
+    // Fetch tasks from API
+    async function fetchTasks() {
+      try {
+        const response = await fetch('/api/tasks', {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          credentials: 'include'
+        });
+        
+        if (!response.ok) {
+          throw new Error('Failed to fetch tasks');
+        }
+        
+        const data = await response.json();
+        if (data.success) {
+          tasks = data.data.map(task => {
+            // Parse dates
+            const startDate = new Date(task.startDate);
+            const deadline = new Date(task.deadline);
+            const isValidStart = !isNaN(startDate.getTime());
+            const isValidDeadline = !isNaN(deadline.getTime());
+
+            // Default to current date if invalid
+            if (!isValidStart) startDate.setTime(currentDate.getTime());
+            if (!isValidDeadline) deadline.setTime(currentDate.getTime());
+
+            // Determine status based on dates
+            let status;
+            if (task.completed) {
+              status = 'Completed';
+            } else if (isValidStart && startDate > currentDate) {
+              status = 'Not Yet Started';
+            } else if (isValidDeadline && deadline < currentDate) {
+              status = 'Pending';
+            } else {
+              status = 'In Progress';
+            }
+
+            return {
+              _id: task._id,
+              name: task.name,
+              priority: task.priority,
+              startDate: formatDate(startDate),
+              deadline: formatDate(deadline),
+              completed: task.completed || false,
+              assignedTo: task.assignedTo?.name || 'Unassigned',
+              assignedToEmail: task.assignedTo?.email || '',
+              status: status
+            };
+          });
+          
+          loadTasks();
+          updateCounts();
+          updateTaskProgressChart();
+        } else {
+          console.error('Failed to fetch tasks:', data.message);
+        }
+      } catch (error) {
+        console.error('Error fetching tasks:', error);
+      }
+    }
+
+    // Update UI based on current view
+    function updateUI() {
+      // Toggle Assign To field visibility
+      const assignToGroup = document.getElementById('assignToGroup');
+      const assignedToHeader = document.getElementById('assignedToHeader');
+      
+      if (currentView === 'my') {
+        if (assignToGroup) assignToGroup.style.display = 'none';
+        if (assignedToHeader) assignedToHeader.style.display = 'none';
+      } else {
+        if (assignToGroup) assignToGroup.style.display = 'block';
+        if (assignedToHeader) assignedToHeader.style.display = 'table-cell';
+      }
+      
+      loadTasks();
+      updateCounts();
+      updateWidgetBasedOnView();
+    }
+
+    // Update widget based on current view
+    function updateWidgetBasedOnView() {
+      const widget = document.getElementById('conditional-widget');
+      const title = document.getElementById('conditional-widget-title');
+      const content = document.getElementById('conditional-widget-content');
+      
+      if (currentView === 'all') {
+        title.textContent = 'Task Status';
+        content.innerHTML = `
+          <div class="status-items">
+            <div class="status-item">
+              <span>In Progress</span>
+              <span class="status-count" id="in-progress-count">0</span>
+            </div>
+            <div class="status-item">
+              <span>Completed</span>
+              <span class="status-count" id="completed-count">0</span>
+            </div>
+            <div class="status-item">
+              <span>Pending</span>
+              <span class="status-count" id="pending-count">0</span>
+            </div>
+            <div class="status-item">
+              <span>Not Yet Started</span>
+              <span class="status-count" id="not-yet-started-count">0</span>
+            </div>
+          </div>
+        `;
+      } else {
+        title.textContent = 'Add New Task';
+        content.innerHTML = `
+          <form id="taskForm">
+            <div class="form-group">
+              <label for="taskName">Task Name</label>
+              <input type="text" id="taskName" placeholder="Enter task name" />
+            </div>
+            
+            <div class="form-row">
+              <div class="form-group">
+                <label for="startDate">Start Date</label>
+                <input type="date" id="startDate" />
+              </div>
+              <div class="form-group">
+                <label for="deadline">End Date</label>
+                <input type="date" id="deadline" />
+              </div>
+            </div>
+            
+            <div class="form-group">
+              <label for="priority">Priority</label>
+              <select id="priority">
+                <option value="Low">Low</option>
+                <option value="Medium" selected>Medium</option>
+                <option value="High">High</option>
+              </select>
+            </div>
+            
+            <div class="form-group assign-to-group" id="assignToGroup">
+              <label for="assignedTo">Assign To</label>
+              <select id="assignedTo">
+                <option value="">Select team member</option>
+                <!-- Team members will be populated dynamically -->
+              </select>
+            </div>
+            
+            <button type="button" class="add-task-btn styled-add-btn" onclick="addTask()">Add Task</button>
+          </form>
+        `;
+        
+        // Update UI based on view
+        const assignToGroup = document.getElementById('assignToGroup');
+        if (currentView === 'my') {
+          if (assignToGroup) assignToGroup.style.display = 'none';
+        } else {
+          if (assignToGroup) assignToGroup.style.display = 'block';
+        }
+      }
+    }
+
+    // Toggle sidebar
+    function toggleSidebar() {
+      const sidebar = document.getElementById('sidebar');
+      sidebar.classList.toggle('collapsed');
+    }
+
+    // Set active view
+    function setView(view) {
+      currentView = view;
+      // Remove 'active' from all sidebar buttons
+      document.querySelectorAll('.sidebar .task-btn').forEach(btn => btn.classList.remove('active'));
+      // Add 'active' to the clicked button
+      document.querySelector(`.sidebar .task-btn[data-type="${view}"]`).classList.add('active');
+      // Hide all main views
+      document.querySelectorAll('.main-view').forEach(v => v.style.display = 'none');
+      // Show the selected view
+      if (view === 'team') {
+        document.getElementById('team-management-view').style.display = 'block';
+        document.querySelector('.header-title h2').textContent = 'Team Management';
+        document.querySelector('.header-title p').textContent = 'Manage your teams and members';
+        loadTeams();
+      } else {
+        document.getElementById('tasks-main-view').style.display = 'block';
+        document.querySelector('.header-title h2').textContent = (view === 'my') ? 'My Tasks' : (view === 'all') ? 'All Tasks' : 'Assigned Tasks';
+        document.querySelector('.header-title p').textContent = 'View and manage your assigned tasks';
+        loadTasks();
+      }
+    }
+
+    // Toggle theme
+    function toggleTheme() {
+      document.body.classList.toggle('light-theme');
+    }
+
+    // Logout function
+    async function logout() {
+      try {
+        const response = await fetch('/api/auth/logout', {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          credentials: 'include'
+        });
+        
+        if (response.ok) {
+          window.location.href = '/'; // Redirect to login page
+        } else {
+          console.error('Logout failed');
+        }
+      } catch (error) {
+        console.error('Logout error:', error);
+      }
+    }
+
+    // Load tasks
+    function loadTasks(searchTerm = '') {
+      const filteredTasks = tasks.filter(task => {
+        const matchesView = currentView === 'all' ||
+          (currentView === 'my' && task.assignedTo === userData.name) ||
+          (currentView === 'assigned' && task.assignedTo !== userData.name);
+        const matchesSearch = !searchTerm || task.name.toLowerCase().includes(searchTerm);
+        return matchesView && matchesSearch;
+      });
+
+      const tasksTable = document.getElementById('tasks');
+      tasksTable.innerHTML = '';
+      
+      if (filteredTasks.length === 0) {
+        const row = document.createElement('tr');
+        row.innerHTML = `<td colspan="7" class="text-center">No tasks found</td>`;
+        tasksTable.appendChild(row);
+        return;
+      }
+      
+      filteredTasks.forEach(task => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${task.name}</td>
+          <td>${task.startDate}</td>
+          <td>${task.deadline}</td>
+          <td><span class="priority ${task.priority.toLowerCase()}">${task.priority}</span></td>
+          <td><span class="status-badge ${task.status.toLowerCase().replace(' ', '-')}">${task.status}</span></td>
+          ${currentView !== 'my' ? `<td>${task.assignedTo}</td>` : ''}
+          <td class="action-buttons">
+            <button class="action-btn" onclick="showTaskActions('${task._id}')"><i class="fas fa-ellipsis-h"></i></button>
+          </td>
+        `;
+        tasksTable.appendChild(row);
+      });
+
+      updateCounts();
+      updateTaskProgressChart();
+    }
+
+    // Update task counts
+    function updateCounts() {
+      const counts = {
+        all: tasks.length,
+        my: tasks.filter(t => t.assignedTo === userData.name).length,
+        assigned: tasks.filter(t => t.assignedTo !== userData.name).length
+      };
+      document.getElementById('all-count').textContent = `(${counts.all})`;
+      document.getElementById('my-count').textContent = `(${counts.my})`;
+      document.getElementById('assigned-count').textContent = `(${counts.assigned})`;
+      
+      // Update status counts
+      const inProgressCount = tasks.filter(t => t.status === 'In Progress').length;
+      const completedCount = tasks.filter(t => t.status === 'Completed').length;
+      const pendingCount = tasks.filter(t => t.status === 'Pending').length;
+      const notYetStartedCount = tasks.filter(t => t.status === 'Not Yet Started').length;
+      
+      document.getElementById('in-progress-count').textContent = inProgressCount;
+      document.getElementById('completed-count').textContent = completedCount;
+      document.getElementById('pending-count').textContent = pendingCount;
+      document.getElementById('not-yet-started-count').textContent = notYetStartedCount;
+    }
+    
+    // Update task progress with Doughnut chart
+    function updateTaskProgressChart() {
+      // Filter tasks based on current view
+      let filteredTasks = tasks;
+      if (currentView === 'my') {
+        filteredTasks = tasks.filter(t => t.assignedTo === userData.name);
+      } else if (currentView === 'assigned') {
+        filteredTasks = tasks.filter(t => t.assignedTo !== userData.name);
+      }
+      
+      const inProgressCount = filteredTasks.filter(t => t.status === 'In Progress').length;
+      const completedCount = filteredTasks.filter(t => t.status === 'Completed').length;
+      const pendingCount = filteredTasks.filter(t => t.status === 'Pending').length;
+      const notYetStartedCount = filteredTasks.filter(t => t.status === 'Not Yet Started').length;
+      
+      // Destroy existing chart if it exists
+      const existingChart = Chart.getChart('taskProgressChart');
+      if (existingChart) existingChart.destroy();
+
+      // Create new Doughnut chart
+      const ctx = document.getElementById('taskProgressChart').getContext('2d');
+      new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+          labels: ['Completed', 'In Progress', 'Pending', 'Not Yet Started'],
+          datasets: [{
+            data: [completedCount, inProgressCount, pendingCount, notYetStartedCount],
+            backgroundColor: ['#2E7D32', '#F9A825', '#F57C00', '#B0BEC5'],
+            borderWidth: 1
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              display: false
+            },
+            tooltip: {
+              callbacks: {
+                label: function(tooltipItem) {
+                  return `${tooltipItem.label}: ${tooltipItem.raw} tasks`;
+                }
+              }
+            }
+          }
+        }
+      });
+
+      // Update custom legend
+      const legendContainer = document.getElementById('taskProgressLegend');
+      legendContainer.innerHTML = `
+        <div class="legend-item"><span class="legend-box" style="background-color: #2E7D32;"></span> Completed (${completedCount} tasks)</div>
+        <div class="legend-item"><span class="legend-box" style="background-color: #F9A825;"></span> In Progress (${inProgressCount} tasks)</div>
+        <div class="legend-item"><span class="legend-box" style="background-color: #F57C00;"></span> Pending (${pendingCount} tasks)</div>
+        <div class="legend-item"><span class="legend-box" style="background-color: #B0BEC5;"></span> Not Yet Started (${notYetStartedCount} tasks)</div>
+      `;
+    }
+
+    // Add task
+    async function addTask() {
+      const taskNameInput = document.getElementById('taskName');
+      const startDateInput = document.getElementById('startDate');
+      const deadlineInput = document.getElementById('deadline');
+      const priorityInput = document.getElementById('priority');
+      const assignedToInput = document.getElementById('assignedTo');
+      
+      if (!taskNameInput.value || !startDateInput.value || !deadlineInput.value) {
+        alert('Task name, start date, and end date are required!');
+        return;
+      }
+      
+      try {
+        const taskData = {
+          name: taskNameInput.value,
+          priority: priorityInput.value,
+          startDate: startDateInput.value,
+          deadline: deadlineInput.value,
+          completed: false
+        };
+        
+        // If we're not in 'my' view and an assignee is selected
+        if (currentView !== 'my' && assignedToInput.value) {
+          const [name, email] = assignedToInput.value.split('|');
+          taskData.assignedTo = { name, email };
+        }
+        
+        const response = await fetch('/api/tasks', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          credentials: 'include',
+          body: JSON.stringify(taskData)
+        });
+        
+        if (!response.ok) {
+          throw new Error('Failed to add task');
+        }
+        
+        const data = await response.json();
+        if (data.success) {
+          // Reset form
+          taskNameInput.value = '';
+          startDateInput.value = '';
+          deadlineInput.value = '';
+          priorityInput.value = 'Medium';
+          if (assignedToInput) assignedToInput.value = '';
+          
+          // Refresh tasks
+          fetchTasks();
+          alert('Task added successfully!');
+        } else {
+          throw new Error(data.message || 'Failed to add task');
+        }
+      } catch (error) {
+        console.error('Error adding task:', error);
+        alert(`Error adding task: ${error.message}`);
+      }
+    }
+    
+    // Show task actions
+    function showTaskActions(taskId) {
+      currentTaskId = taskId;
+      const task = tasks.find(t => t._id === taskId);
+      
+      if (task) {
+        // Update button text based on task completion status
+        const completeBtn = document.getElementById('completeTaskBtn');
+        completeBtn.textContent = task.completed ? 'Mark as Incomplete' : 'Mark as Complete';
+        
+        // Show modal
+        const modal = document.getElementById('taskActionsModal');
+        modal.style.display = 'block';
+      }
+    }
+    
+    // Close task modal
+    function closeTaskModal() {
+      const modal = document.getElementById('taskActionsModal');
+      modal.style.display = 'none';
+      currentTaskId = null;
+    }
+    
+    // Edit task
+    async function editTask() {
+      if (!currentTaskId) return;
+
+      const task = tasks.find(t => t._id === currentTaskId);
+      if (!task) return;
+
+      // Prompt for new values
+      const newName = prompt('Enter new task name:', task.name);
+      const newStartDate = prompt('Enter new start date (YYYY-MM-DD):', task.startDate.split(',')[1].trim().split(' ')[2] + '-' + new Date(task.startDate).toLocaleString('default', { month: 'short' }).padStart(2, '0') + '-' + new Date(task.startDate).getDate().toString().padStart(2, '0'));
+      const newDeadline = prompt('Enter new end date (YYYY-MM-DD):', task.deadline.split(',')[1].trim().split(' ')[2] + '-' + new Date(task.deadline).toLocaleString('default', { month: 'short' }).padStart(2, '0') + '-' + new Date(task.deadline).getDate().toString().padStart(2, '0'));
+      const newPriority = prompt('Enter new priority (Low/Medium/High):', task.priority);
+
+      if (newName && newStartDate && newDeadline && ['Low', 'Medium', 'High'].includes(newPriority)) {
+        try {
+          const updatedTask = {
+            name: newName,
+            startDate: newStartDate,
+            deadline: newDeadline,
+            priority: newPriority
+          };
+
+          const response = await fetch(`/api/tasks/${currentTaskId}`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            credentials: 'include',
+            body: JSON.stringify(updatedTask)
+          });
+
+          if (!response.ok) {
+            throw new Error('Failed to update task');
+          }
+
+          const data = await response.json();
+          if (data.success) {
+            // Refresh tasks
+            fetchTasks();
+            closeTaskModal();
+            alert('Task updated successfully!');
+          } else {
+            throw new Error(data.message || 'Failed to update task');
+          }
+        } catch (error) {
+          console.error('Error updating task:', error);
+          alert(`Error updating task: ${error.message}`);
+        }
+      } else {
+        alert('Invalid input! Please use correct date format (YYYY-MM-DD) and priority (Low/Medium/High).');
+      }
+    }
+    
+    // Toggle task completion
+    async function toggleTaskCompletion() {
+      if (!currentTaskId) return;
+      
+      try {
+        const task = tasks.find(t => t._id === currentTaskId);
+        if (!task) return;
+        
+        const updatedTask = {
+          ...task,
+          completed: !task.completed
+        };
+        
+        const response = await fetch(`/api/tasks/${currentTaskId}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          credentials: 'include',
+          body: JSON.stringify(updatedTask)
+        });
+        
+        if (!response.ok) {
+          throw new Error('Failed to update task');
+        }
+        
+        const data = await response.json();
+        if (data.success) {
+          // Refresh tasks
+          fetchTasks();
+          closeTaskModal();
+        } else {
+          throw new Error(data.message || 'Failed to update task');
+        }
+      } catch (error) {
+        console.error('Error updating task:', error);
+        alert(`Error updating task: ${error.message}`);
+      }
+    }
+    
+    // Delete task
+    async function deleteTask() {
+      if (!currentTaskId) return;
+      
+      if (!confirm('Are you sure you want to delete this task?')) {
+        return;
+      }
+      
+      try {
+        const response = await fetch(`/api/tasks/${currentTaskId}`, {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          credentials: 'include'
+        });
+        
+        if (!response.ok) {
+          throw new Error('Failed to delete task');
+        }
+        
+        const data = await response.json();
+        if (data.success) {
+          // Remove task from local array
+          tasks = tasks.filter(t => t._id !== currentTaskId);
+          
+          // Update UI
+          loadTasks();
+          closeTaskModal();
+          alert('Task deleted successfully!');
+        } else {
+          throw new Error(data.message || 'Failed to delete task');
+        }
+      } catch (error) {
+        console.error('Error deleting task:', error);
+        alert(`Error deleting task: ${error.message}`);
+      }
+    }
+    
+    // Helper function to format date
+    function formatDate(date) {
+      const month = date.toLocaleString('default', { month: 'short' });
+      return `${month} ${date.getDate()}, ${date.getFullYear()}`;
+    }
+
+    // Team Management Functions
+
+    // Show teams list view
+    function showTeamsList() {
+      document.getElementById('team-details-section').style.display = 'none';
+      document.getElementById('create-team-section').style.display = 'none';
+      document.querySelector('.team-list-section').style.display = 'block';
+    }
+
+    // Show create team form
+    function showCreateTeamForm() {
+      document.getElementById('team-details-section').style.display = 'none';
+      document.querySelector('.team-list-section').style.display = 'none';
+      document.getElementById('create-team-section').style.display = 'block';
+      
+      // Reset form
+      document.getElementById('teamName').value = '';
+      document.getElementById('teamDescription').value = '';
+    }
+
+    // Show team details view
+    function showTeamDetails() {
+      document.querySelector('.team-list-section').style.display = 'none';
+      document.getElementById('create-team-section').style.display = 'none';
+      document.getElementById('team-details-section').style.display = 'block';
+    }
+
+    // Load all teams
+    async function loadTeams() {
+      try {
+        const response = await fetch('/api/teams', {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          credentials: 'include'
+        });
+        
+        if (!response.ok) {
+          throw new Error('Failed to fetch teams');
+        }
+        
+        const data = await response.json();
+        if (data.success) {
+          teams = data.data;
+          
+          const teamsContainer = document.getElementById('teams-container');
+          teamsContainer.innerHTML = '';
+          
+          if (teams.length === 0) {
+            teamsContainer.innerHTML = '<p>No teams found. Create your first team!</p>';
+            return;
+          }
+          
+          teams.forEach(team => {
+            const teamCard = document.createElement('div');
+            teamCard.className = 'team-card';
+            teamCard.onclick = () => selectTeam(team._id);
+            
+            teamCard.innerHTML = `
+              <h4>${team.name}</h4>
+              <p>${team.description || 'No description'}</p>
+              <div class="member-count">
+                <i class="fas fa-user-friends"></i> ${team.members.length} Members
+              </div>
+            `;
+            
+            teamsContainer.appendChild(teamCard);
+          });
+        } else {
+          throw new Error(data.message || 'Failed to load teams');
+        }
+      } catch (error) {
+        console.error('Error loading teams:', error);
+        document.getElementById('teams-container').innerHTML = 
+          `<p>Error loading teams: ${error.message}</p>`;
+      }
+    }
+
+    // Select a team to manage
+    async function selectTeam(teamId) {
+      currentTeam = teams.find(team => team._id === teamId);
+      
+      if (currentTeam) {
+        // Update team info display
+        document.getElementById('current-team-name').textContent = currentTeam.name;
+        document.getElementById('current-team-description').textContent = 
+          currentTeam.description || 'No description available.';
+        
+        // Load team members
+        await loadTeamMembers(teamId);
+        
+        // Show team details view
+        showTeamDetails();
+      } else {
+        alert('Team not found!');
+      }
+    }
+
+    // Load team members
+    async function loadTeamMembers(teamId) {
+      try {
+        const response = await fetch(`/api/teams/${teamId}/members`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          credentials: 'include'
+        });
+        
+        if (!response.ok) {
+          throw new Error('Failed to fetch team members');
+        }
+        
+        const data = await response.json();
+        if (data.success) {
+          const membersList = document.getElementById('members-list');
+          membersList.innerHTML = '';
+          
+          if (data.data.length === 0) {
+            membersList.innerHTML = '<p>No members in this team yet.</p>';
+            return;
+          }
+          
+          data.data.forEach(member => {
+            const memberItem = document.createElement('div');
+            memberItem.className = 'member-item';
+            
+            memberItem.innerHTML = `
+              <div class="member-info">
+                <span class="member-name">${member.name}</span>
+                <span class="member-email">${member.email}</span>
+              </div>
+              <div class="member-actions">
+                <button onclick="removeMember('${member._id}')">
+                  <i class="fas fa-trash"></i> Remove
+                </button>
+              </div>
+            `;
+            
+            membersList.appendChild(memberItem);
+          });
+          
+          // Update assignedTo dropdown for tasks with team members
+          updateAssigneeDropdown(data.data);
+        } else {
+          throw new Error(data.message || 'Failed to load team members');
+        }
+      } catch (error) {
+        console.error('Error loading team members:', error);
+        document.getElementById('members-list').innerHTML = 
+          `<p>Error loading members: ${error.message}</p>`;
+      }
+    }
+
+    // Add a team member
+    async function addTeamMember() {
+      if (!currentTeam) {
+        alert('No team selected!');
+        return;
+      }
+      
+      const nameInput = document.getElementById('memberName');
+      const emailInput = document.getElementById('memberEmail');
+      
+      if (!nameInput.value || !emailInput.value) {
+        alert('Name and email are required!');
+        return;
+      }
+      
+      try {
+        const response = await fetch(`/api/teams/${currentTeam._id}/members`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          credentials: 'include',
+          body: JSON.stringify({
+            name: nameInput.value,
+            email: emailInput.value
+          })
+        });
+        
+        if (!response.ok) {
+          throw new Error('Failed to add team member');
+        }
+        
+        const data = await response.json();
+        if (data.success) {
+          // Reset form
+          nameInput.value = '';
+          emailInput.value = '';
+          
+          // Reload team members
+          await loadTeamMembers(currentTeam._id);
+        } else {
+          throw new Error(data.message || 'Failed to add team member');
+        }
+      } catch (error) {
+        console.error('Error adding team member:', error);
+        alert(`Error adding team member: ${error.message}`);
+      }
+    }
+
+    // Remove a team member
+    async function removeMember(memberId) {
+      if (!currentTeam) {
+        alert('No team selected!');
+        return;
+      }
+      
+      if (!confirm('Are you sure you want to remove this member from the team?')) {
+        return;
+      }
+      
+      try {
+        const response = await fetch(`/api/teams/${currentTeam._id}/members/${memberId}`, {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          credentials: 'include'
+        });
+        
+        if (!response.ok) {
+          throw new Error('Failed to remove team member');
+        }
+        
+        const data = await response.json();
+        if (data.success) {
+          await loadTeamMembers(currentTeam._id);
+        } else {
+          throw new Error(data.message || 'Failed to remove team member');
+        }
+      } catch (error) {
+        console.error('Error removing team member:', error);
+        alert(`Error removing team member: ${error.message}`);
+      }
+    }
+
+    // Update assignee dropdown in task form with team members
+    function updateAssigneeDropdown(members) {
+      const assigneeDropdown = document.getElementById('assignedTo');
+      
+      // Keep the default option
+      const defaultOption = assigneeDropdown.options[0];
+      assigneeDropdown.innerHTML = '';
+      assigneeDropdown.appendChild(defaultOption);
+      
+      // Add members as options
+      members.forEach(member => {
+        const option = document.createElement('option');
+        option.value = `${member.name}|${member.email}`;
+        option.textContent = member.name;
+        assigneeDropdown.appendChild(option);
+      });
+    }
+
+    // Create a new team
+    async function createTeam() {
+      const nameInput = document.getElementById('teamName');
+      const descriptionInput = document.getElementById('teamDescription');
+      
+      if (!nameInput.value) {
+        alert('Team name is required!');
+        return;
+      }
+      
+      try {
+        const response = await fetch('/api/teams', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          credentials: 'include',
+          body: JSON.stringify({
+            name: nameInput.value,
+            description: descriptionInput.value || ''
+          })
+        });
+        
+        if (!response.ok) {
+          throw new Error('Failed to create team');
+        }
+        
+        const data = await response.json();
+        if (data.success) {
+          // Reset form
+          nameInput.value = '';
+          descriptionInput.value = '';
+          
+          // Show teams list and reload teams
+          showTeamsList();
+          loadTeams();
+        } else {
+          throw new Error(data.message || 'Failed to create team');
+        }
+      } catch (error) {
+        console.error('Error creating team:', error);
+        alert(`Error creating team: ${error.message}`);
+      }
+    }
+  </script>
+  <style>
+    /* Style for Add Task button */
+    .styled-add-btn {
+      background-color: #4CAF50; /* Green background */
+      color: white;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background-color 0.3s, transform 0.2s;
+      font-size: 16px;
+    }
+
+    .styled-add-btn:hover {
+      background-color: #45a049; /* Darker green on hover */
+      transform: scale(1.05); /* Slight scale effect on hover */
+    }
+
+    body.light-theme .styled-add-btn {
+      background-color: #4CAF50;
+    }
+
+    body.light-theme .styled-add-btn:hover {
+      background-color: #45a049;
+    }
+
+    /* Modal styling adjustments */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.5);
+    }
+
+    .modal-content {
+      background-color: #333;
+      margin: 15% auto;
+      padding: 20px;
+      border: 1px solid #888;
+      width: 80%;
+      max-width: 400px;
+      border-radius: 5px;
+      color: white;
+    }
+
+    .team-modal-content {
+      width: 90%;
+      max-width: 1000px;
+      margin: 5% auto;
+      padding: 25px;
+    }
+
+    .close-modal {
+      color: #aaa;
+      float: right;
+      font-size: 28px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .close-modal:hover,
+    .close-modal:focus {
+      color: white;
+      text-decoration: none;
+      cursor: pointer;
+    }
+
+    .modal-actions button {
+      display: block;
+      width: 100%;
+      padding: 10px;
+      margin: 10px 0;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+
+    #editTaskBtn {
+      background-color: #2196F3;
+      color: white;
+    }
+
+    #editTaskBtn:hover {
+      background-color: #1976D2;
+    }
+
+    #completeTaskBtn {
+      background-color: #FF9800;
+      color: white;
+    }
+
+    #completeTaskBtn:hover {
+      background-color: #F57C00;
+    }
+
+    #deleteTaskBtn {
+      background-color: #F44336;
+      color: white;
+    }
+
+    #deleteTaskBtn:hover {
+      background-color: #D32F2F;
+    }
+
+    /* Adjust Task Progress chart container */
+    .task-progress .progress-chart-container {
+      position: relative;
+      height: 200px; /* Fixed height to fit the chart */
+      width: 100%;
+    }
+
+    .task-progress canvas {
+      max-height: 100%;
+      max-width: 100%;
+    }
+
+    /* Style for custom legend */
+    .task-progress-legend {
+      margin-top: 10px;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-around;
+      color: white;
+      font-size: 14px;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      margin: 5px;
+    }
+
+    .legend-box {
+      width: 15px;
+      height: 15px;
+      margin-right: 5px;
+      display: inline-block;
+    }
+
+    /* Status badge styling */
+    .status-badge {
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-size: 12px;
+    }
+    .status-badge.completed { background-color: #2E7D32; color: white; }
+    .status-badge.in-progress { background-color: #F9A825; color: white; }
+    .status-badge.pending { background-color: #F57C00; color: white; }
+    .status-badge.not-yet-started { background-color: #B0BEC5; color: black; }
+
+    /* Team Management Styles */
+    .team-management-container {
+      display: flex;
+      gap: 20px;
+    }
+
+    .team-list-section, 
+    .team-details-section, 
+    .create-team-section {
+      flex: 1;
+    }
+
+    .team-list-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+    }
+
+    .team-card {
+      background-color: #444;
+      padding: 15px;
+      margin-bottom: 10px;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+
+    .team-card:hover {
+      background-color: #555;
+    }
+
+    .team-info {
+      margin-bottom: 20px;
+      padding-bottom: 15px;
+      border-bottom: 1px solid #555;
+    }
+
+    .members-management {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .members-list {
+      max-height: 300px;
+      overflow-y: auto;
+      background-color: #444;
+      padding: 10px;
+      border-radius: 5px;
+    }
+
+    .member-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px;
+      border-bottom: 1px solid #555;
+    }
+
+    .member-item:last-child {
+      border-bottom: none;
+    }
+
+    .member-info {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .member-name {
+      font-weight: bold;
+    }
+
+    .member-email {
+      font-size: 0.9em;
+      color: #aaa;
+    }
+
+    .add-member-form {
+      background-color: #444;
+      padding: 15px;
+      border-radius: 5px;
+    }
+
+    .form-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 15px;
+    }
+
+    .cancel-btn {
+      background-color: #666;
+      color: white;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+
+    .cancel-btn:hover {
+      background-color: #777;
+    }
+
+    /* Inline Team Management styles */
+    .modal.inline {
+      position: static;
+      display: block;
+      background: transparent;
+      padding: 0;
+    }
+
+    .modal.inline .modal-content {
+      width: 100%;
+      max-width: 100%;
+      height: auto;
+      box-shadow: none;
+    }
+
+    /* Conditional Widget Styles */
+    #conditional-widget {
+      min-height: 300px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    #conditional-widget-content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+
+    #conditional-widget-content form {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Status items styling */
+    .status-items {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .status-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px;
+      background-color: #444;
+      border-radius: 5px;
+    }
+
+    .status-count {
+      font-weight: bold;
+      color: #FF9800;
+    }
+  </style>
+</body>
+</html>

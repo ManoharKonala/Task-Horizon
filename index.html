@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Task Manager | Auth</title>
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #1a1a2e, #0f3460);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      color: #fff;
+      animation: fadeIn 1s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: scale(0.98); }
+      to { opacity: 1; transform: scale(1); }
+    }
+
+    .container {
+      position: relative;
+      background: linear-gradient(135deg, #16213e, #1a2a44);
+      padding: 40px;
+      border-radius: 15px;
+      width: 100%;
+      max-width: 400px;
+      box-shadow: 0 8px 25px rgba(0, 255, 149, 0.1);
+      text-align: center;
+    }
+
+    h2 {
+      margin-bottom: 10px;
+      font-size: 28px;
+      color: #00ff95;
+      text-shadow: 0 0 10px #00cc7a;
+    }
+
+    p {
+      font-size: 14px;
+      color: #ccc;
+      margin-bottom: 20px;
+    }
+
+    form {
+      display: flex;
+      flex-direction: column;
+    }
+
+    input {
+      padding: 12px;
+      margin-bottom: 15px;
+      border: none;
+      border-radius: 8px;
+      background: linear-gradient(135deg, #1a2a44, #16213e);
+      color: #fff;
+      font-size: 14px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+      transition: box-shadow 0.3s;
+    }
+
+    input:focus {
+      outline: none;
+      box-shadow: 0 0 8px rgba(0, 255, 149, 0.6);
+    }
+
+    button {
+      background: linear-gradient(45deg, #00ff95, #00cc7a);
+      color: #16213e;
+      padding: 12px;
+      border: none;
+      border-radius: 8px;
+      font-weight: bold;
+      font-size: 16px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 8px rgba(0, 255, 149, 0.3);
+    }
+
+    button:hover {
+      transform: translateY(-2px);
+      background: linear-gradient(45deg, #00cc7a, #009960);
+      box-shadow: 0 6px 12px rgba(0, 204, 122, 0.5);
+    }
+
+    .toggle {
+      margin-top: 20px;
+    }
+
+    .toggle button {
+      background: none;
+      color: #00ff95;
+      border: none;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .toggle button:hover {
+      text-decoration: underline;
+    }
+
+    #messageBox {
+      margin-bottom: 10px;
+      font-weight: bold;
+      color: #ff6b6b;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    /* Theme toggle button */
+    #theme-toggle {
+      position: absolute;
+      top: 15px;
+      right: 15px;
+      background: transparent;
+      border: none;
+      font-size: 20px;
+      cursor: pointer;
+      color: #00ff95;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- 🌗 Theme toggle button -->
+    <button id="theme-toggle">🌙</button>
+
+    <h2 id="form-title">Welcome Back</h2>
+    <p id="form-subtitle">Login to manage your tasks efficiently</p>
+
+    <div id="messageBox"></div>
+
+    <!-- Login Form -->
+    <form id="login-form">
+      <input type="email" name="email" placeholder="Email" required />
+      <input type="password" name="password" placeholder="Password" required />
+      <button type="submit">Login</button>
+    </form>
+
+    <!-- Signup Form -->
+    <form id="signup-form" class="hidden">
+      <input type="text" name="name" placeholder="Full Name" required />
+      <input type="email" name="email" placeholder="Email" required />
+      <input type="password" name="password" placeholder="Password" required />
+      <button type="submit">Signup</button>
+    </form>
+
+    <div class="toggle">
+      <span id="toggle-text">Don't have an account?</span>
+      <button id="toggle-btn">Sign up</button>
+    </div>
+  </div>
+
+  <script>
+    const loginForm = document.getElementById('login-form');
+    const signupForm = document.getElementById('signup-form');
+    const messageBox = document.getElementById('messageBox');
+    const toggleBtn = document.getElementById('toggle-btn');
+    const toggleText = document.getElementById('toggle-text');
+    const formTitle = document.getElementById('form-title');
+    const formSubtitle = document.getElementById('form-subtitle');
+
+    // Toggle between login and signup forms
+    toggleBtn.addEventListener('click', () => {
+      const isLogin = !loginForm.classList.contains('hidden');
+      loginForm.classList.toggle('hidden');
+      signupForm.classList.toggle('hidden');
+      formTitle.textContent = isLogin ? 'Create an Account' : 'Welcome Back';
+      formSubtitle.textContent = isLogin ? 'Sign up to start managing your tasks' : 'Login to manage your tasks efficiently';
+      toggleText.textContent = isLogin ? 'Already have an account?' : "Don't have an account?";
+      toggleBtn.textContent = isLogin ? 'Login' : 'Sign up';
+      messageBox.textContent = '';
+    });
+
+    // Robust login handler
+    loginForm?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      messageBox.textContent = '';
+      messageBox.style.color = '#ff6b6b';
+      try {
+        const email = loginForm.email.value;
+        const password = loginForm.password.value;
+        const res = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ email, password }),
+        });
+        let data;
+        try {
+          data = await res.json();
+        } catch (err) {
+          data = { message: '❌ Login failed! (Invalid server response)' };
+        }
+        if (res.ok) {
+          messageBox.style.color = '#00ff95';
+          messageBox.textContent = '✅ Login successful! Redirecting...';
+          setTimeout(() => {
+            window.location.href = '/dashboard.html';
+          }, 1000);
+        } else {
+          messageBox.textContent = data.message || '❌ Login failed!';
+        }
+      } catch (error) {
+        messageBox.textContent = '❌ Login failed! (Network/server error)';
+      }
+    });
+
+    // Robust signup handler
+    signupForm?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      messageBox.textContent = '';
+      messageBox.style.color = '#ff6b6b';
+      try {
+        const name = signupForm.name.value;
+        const email = signupForm.email.value;
+        const password = signupForm.password.value;
+        const res = await fetch('/api/auth/signup', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, email, password }),
+        });
+        let data;
+        try {
+          data = await res.json();
+        } catch (err) {
+          data = { message: '❌ Signup failed! (Invalid server response)' };
+        }
+        if (res.ok) {
+          messageBox.style.color = '#00ff95';
+          messageBox.textContent = '✅ Signup successful! Please login.';
+          signupForm.reset();
+          signupForm.classList.add('hidden');
+          loginForm.classList.remove('hidden');
+          formTitle.textContent = 'Welcome Back';
+          formSubtitle.textContent = 'Login to manage your tasks efficiently';
+          toggleText.textContent = "Don't have an account?";
+          toggleBtn.textContent = 'Sign up';
+        } else {
+          messageBox.textContent = data.message || '❌ Signup failed!';
+        }
+      } catch (error) {
+        messageBox.textContent = '❌ Signup failed! (Network/server error)';
+      }
+    });
+
+    // 🌗 Light/Dark mode toggle
+    const themeToggleBtn = document.getElementById('theme-toggle');
+    let isDark = true;
+    themeToggleBtn.addEventListener('click', () => {
+      document.body.classList.toggle('light-mode');
+      isDark = !isDark;
+      themeToggleBtn.textContent = isDark ? '🌙' : '☀️';
+    });
+</script>
+</body>
+</html>
