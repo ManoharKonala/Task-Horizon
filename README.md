@@ -1,5 +1,5 @@
-# Task Horizon
 
+<h1 align="center">🚀 Task Horizon</h1>
 Task Horizon is a modern task management dashboard application built to help users organize, track, and manage tasks efficiently. With a sleek neon-themed interface, interactive widgets, and real-time updates, it provides an intuitive experience for both individual and team task management.
 
 ## Table of Contents
