@@ -15,7 +15,7 @@ Task Horizon is a modern task management dashboard application built to help use
 
 ## Features
 ```markdown
-- ** Comprehensive Task Management **: Enable the creation, editing, deletion, and status toggling (complete/incomplete) of tasks through an intuitive interface, supported by seamless backend integration for data persistence.
+- **Comprehensive Task Management**: Enable the creation, editing, deletion, and status toggling (complete/incomplete) of tasks through an intuitive interface, supported by seamless backend integration for data persistence.
 - **Multi-Perspective Task Views**: Provide flexible navigation across multiple views—Dashboard for an overview, All Tasks for system-wide visibility, My Tasks for user-specific tasks, and Assigned Tasks for delegated responsibilities—ensuring tailored task oversight.
 - **Real-Time Task Progress Visualization**: Deliver an interactive doughnut chart that dynamically updates to reflect task distribution across statuses (Completed, In Progress, Pending, Not Yet Started), enhancing decision-making with visual analytics.
 - **Detailed Status Monitoring**: Offer a granular breakdown of task statuses with live counts, allowing users to monitor progress and identify bottlenecks across In Progress, Completed, Pending, and Not Yet Started categories.
@@ -34,7 +34,7 @@ Task Horizon is a modern task management dashboard application built to help use
 - **Toastr.js**: For notification alerts.
 - **Font Awesome**: Icons for UI elements.
 - **Backend API**: Placeholder for authentication and task management (e.g., `/api/auth`, `/api/tasks`).
-- 
+
 ## Installation
 
 1. **Clone the Repository**
@@ -97,6 +97,8 @@ Task Horizon is designed to streamline task and team management with a user-frie
 
 This application assumes a backend API for data persistence and user management. Configure the frontend JavaScript to match your API endpoints (e.g., `/api/tasks`, `/api/auth`) for full functionality.
 ```
+## Screenshots
+
 ## Setup
 1. Install dependencies: `npm install`
 2. Set up MongoDB Atlas:
