@@ -26,7 +26,7 @@ app.use(session({
     store: MongoStore.create({ mongoUrl: process.env.MONGO_URI }),
     cookie: {
         httpOnly: true,
-        secure: false, // Set to true in production with HTTPS
+        secure: process.env.NODE_ENV === 'production', // Set to true in production with HTTPS
         sameSite: 'lax',
         maxAge: 24 * 60 * 60 * 1000 // 1 day
     }
@@ -52,6 +52,7 @@ app.use('/api/teams', require('./routes/teamroutes')); // New teams routes
 
 // Auth endpoint to get user info
 app.get('/api/auth/user', (req, res) => {
+  console.log('API route hit: /api/auth/user');
     if (req.isAuthenticated()) {
         return res.status(200).json({ 
             success: true, 
@@ -68,6 +69,7 @@ app.get('/api/auth/user', (req, res) => {
 
 // Logout endpoint
 app.get('/api/auth/logout', (req, res) => {
+  console.log('API route hit: /api/auth/logout');
     req.logout(function(err) {
         if (err) { return res.status(500).json({ success: false, message: 'Logout failed' }); }
         return res.status(200).json({ success: true, message: 'Logged out successfully' });
@@ -76,6 +78,7 @@ app.get('/api/auth/logout', (req, res) => {
 
 // Protect ALL dashboard routes
 app.get('/dashboard*', (req, res, next) => {
+  console.log('Route hit: /dashboard');
     if (req.isAuthenticated()) {
         // Allow access to authenticated users
         if (req.path === '/dashboard.html' || req.path.endsWith('.css') || req.path.endsWith('.js')) {

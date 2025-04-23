@@ -61,6 +61,64 @@
         </div>
       </div>
       
+      <!-- Widgets Row: Task Progress and Add Task -->
+
+
+      <div class="widgets-row" id="widgets-row">
+        <!-- Task Progress Widget -->
+        <div class="widget task-progress">
+          <h3>Task Progress</h3>
+          <div style="height:200px;width:100%;">
+            <canvas id="taskProgressChart"></canvas>
+          </div>
+          <div class="task-progress-legend" id="task-progress-legend">
+            <!-- Legend will be populated dynamically -->
+          </div>
+        </div>
+        <!-- Add Task Widget -->
+        <div class="widget add-task-form" id="add-task-widget">
+          <h3>Add New Task</h3>
+          <form id="taskForm" onsubmit="event.preventDefault(); addTask();">
+            <div class="form-group">
+              <label for="taskName">Task Name</label>
+              <input type="text" id="taskName" placeholder="Enter task name" required />
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="startDate">Start Date</label>
+                <input type="date" id="startDate" required />
+              </div>
+              <div class="form-group">
+                <label for="deadline">End Date</label>
+                <input type="date" id="deadline" required />
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="priority">Priority</label>
+              <select id="priority">
+                <option value="Low">Low</option>
+                <option value="Medium" selected>Medium</option>
+                <option value="High">High</option>
+              </select>
+            </div>
+            <div class="form-group assign-to-group" id="assignToTeamGroup">
+              <label for="taskTeam">Team</label>
+              <select id="taskTeam" onchange="onTaskTeamChange()">
+                <option value="">Select team</option>
+                <!-- Teams will be populated dynamically -->
+              </select>
+            </div>
+            <div class="form-group assign-to-group" id="assignToGroup" style="display:none;">
+              <label for="assignedTo">Assign To</label>
+              <select id="assignedTo">
+                <option value="">Select team member</option>
+                <!-- Team members will be populated dynamically -->
+              </select>
+            </div>
+            <button type="submit" class="add-task-btn styled-add-btn">Add Task</button>
+          </form>
+        </div>
+      </div>
       <!-- Main Content Grid -->
       <div id="tasks-main-view" class="content-grid main-view">
         <!-- Task Table Section -->
@@ -114,7 +172,8 @@
       <div id="team-management-view" class="main-view" style="display:none">
         <div class="widget team-management-widget">
           <h3>Team Management</h3>
-          <div class="team-management-container">
+
+      <div class="team-management-container">
             <div class="team-list-section">
               <div class="team-list-header">
                 <h4>My Teams</h4>
@@ -128,6 +187,9 @@
             </div>
             <div class="team-details-section" id="team-details-section" style="display: none;">
               <div class="team-info">
+                <button class="back-btn styled-add-btn" style="margin-bottom: 10px;" onclick="showTeamsList()">
+                  <i class="fas fa-arrow-left"></i> Back to My Teams
+                </button>
                 <h4 id="current-team-name">Team Name</h4>
                 <p id="current-team-description">Team description will appear here.</p>
               </div>
@@ -203,24 +265,94 @@
     let currentTeam = null;
 
     // Initialize page
-    document.addEventListener('DOMContentLoaded', function() {
+  // In your dashboard.html script section
+document.addEventListener('DOMContentLoaded', function() {
+  populateTeamsDropdown();
+  
+  // Add a loading indicator
+  const loadingEl = document.createElement('div');
+  loadingEl.style.position = 'fixed';
+  loadingEl.style.top = '0';
+  loadingEl.style.left = '0';
+  loadingEl.style.width = '100%';
+  loadingEl.style.height = '100%';
+  loadingEl.style.backgroundColor = 'rgba(0,0,0,0.8)';
+  loadingEl.style.color = 'white';
+  loadingEl.style.display = 'flex';
+  loadingEl.style.justifyContent = 'center';
+  loadingEl.style.alignItems = 'center';
+  loadingEl.style.zIndex = '9999';
+  loadingEl.innerHTML = '<div style="text-align:center;"><div style="border:4px solid rgba(255,255,255,0.3);border-radius:50%;border-top:4px solid white;width:40px;height:40px;margin:0 auto 20px;animation:spin 1s linear infinite;"></div><p>Loading your dashboard...</p></div>';
+  document.body.appendChild(loadingEl);
+  
+  // Add animation style
+  const style = document.createElement('style');
+  style.textContent = '@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }';
+  document.head.appendChild(style);
+
+  // Check authentication with better error handling
+  fetch('/api/auth/user', { 
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json' }
+  })
+  .then(res => {
+    if (!res.ok) {
+      return res.json().then(data => {
+        console.error('Authentication failed:', data);
+        throw new Error(data.message || 'Not authenticated');
+      }).catch(err => {
+        console.error('Error parsing authentication response:', err);
+        throw new Error('Authentication failed');
+      });
+    }
+    return res.json();
+  })
+  .then(data => {
+    console.log('Authentication successful:', data);
+    
+    // Remove loading indicator
+    document.body.removeChild(loadingEl);
+    
+    // Make dashboard visible
+    document.body.style.visibility = 'visible';
+    
+    // Initialize dashboard
+    initDashboard(data.user);
+    
+    // Set up periodic session check
+    setInterval(() => {
       fetch('/api/auth/user', { 
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' }
       })
       .then(res => {
-        if (!res.ok) throw new Error('Not authenticated');
-        return res.json();
+        if (!res.ok) {
+          console.warn('Session expired, redirecting to login');
+          // Only redirect if not already on login page
+          if (window.location.pathname !== '/login.html') {
+            window.location.href = '/login.html';
+          }
+        }
       })
-      .then(data => {
-        document.body.style.visibility = 'visible';
-        // Initialize dashboard here
-        initDashboard(data.user);
-      })
-      .catch(() => {
-        window.location.href = '/';
+      .catch(err => {
+        console.error('Session check failed:', err);
       });
-    });
+    }, 5 * 60 * 1000); // Check every 5 minutes
+  })
+  .catch(error => {
+    console.error('Authentication error:', error);
+    
+    // Update loading indicator to show error
+    loadingEl.innerHTML = '<div style="text-align:center;"><p>Session expired or not authenticated.</p><p>Redirecting to login...</p></div>';
+    
+    // Redirect after a short delay
+    setTimeout(() => {
+      if (window.location.pathname !== '/login.html') {
+        window.location.href = '/login.html';
+      }
+    }, 2000);
+  });
+});
 
     function initDashboard(user) {
       // Check if user is authenticated
@@ -236,13 +368,26 @@
       // Set user greeting
       document.getElementById('user-greeting').textContent = userData.name;
       
+      // Hide or show Add Task widget on initial load based on currentView
+      const addTaskWidget = document.getElementById('add-task-widget');
+      if (addTaskWidget) {
+        if (currentView === 'team') {
+          addTaskWidget.style.display = 'none';
+        } else {
+          addTaskWidget.style.display = 'block';
+        }
+      }
+
       // Fetch tasks after authentication is confirmed
       fetchTasks();
       
       // Set up search functionality
-      document.getElementById('taskSearch').addEventListener('input', function(e) {
-        loadTasks(e.target.value.toLowerCase());
-      });
+      const taskSearchEl = document.getElementById('taskSearch');
+      if (taskSearchEl) {
+        taskSearchEl.addEventListener('input', function(e) {
+          loadTasks(e.target.value.toLowerCase());
+        });
+      }
     }
 
     // Check if user is authenticated
@@ -424,7 +569,14 @@
               </select>
             </div>
             
-            <div class="form-group assign-to-group" id="assignToGroup">
+            <div class="form-group assign-to-group" id="assignToTeamGroup">
+              <label for="taskTeam">Team</label>
+              <select id="taskTeam" onchange="onTaskTeamChange()">
+                <option value="">Select team</option>
+                <!-- Teams will be populated dynamically -->
+              </select>
+            </div>
+            <div class="form-group assign-to-group" id="assignToGroup" style="display:none;">
               <label for="assignedTo">Assign To</label>
               <select id="assignedTo">
                 <option value="">Select team member</option>
@@ -461,6 +613,24 @@
       document.querySelector(`.sidebar .task-btn[data-type="${view}"]`).classList.add('active');
       // Hide all main views
       document.querySelectorAll('.main-view').forEach(v => v.style.display = 'none');
+      // Hide or show widgets-row based on view
+      const widgetsRow = document.getElementById('widgets-row');
+      if (widgetsRow) {
+        if (view === 'team') {
+          widgetsRow.style.display = 'none';
+        } else {
+          widgetsRow.style.display = 'flex';
+        }
+      }
+      // Hide or show Add Task widget based on view
+      const addTaskWidget = document.getElementById('add-task-widget');
+      if (addTaskWidget) {
+        if (view === 'team') {
+          addTaskWidget.style.display = 'none';
+        } else {
+          addTaskWidget.style.display = 'block';
+        }
+      }
       // Show the selected view
       if (view === 'team') {
         document.getElementById('team-management-view').style.display = 'block';
@@ -529,7 +699,7 @@
           <td>${task.deadline}</td>
           <td><span class="priority ${task.priority.toLowerCase()}">${task.priority}</span></td>
           <td><span class="status-badge ${task.status.toLowerCase().replace(' ', '-')}">${task.status}</span></td>
-          ${currentView !== 'my' ? `<td>${task.assignedTo}</td>` : ''}
+          <td>${currentView !== 'my' ? task.assignedTo : ''}</td>
           <td class="action-buttons">
             <button class="action-btn" onclick="showTaskActions('${task._id}')"><i class="fas fa-ellipsis-h"></i></button>
           </td>
@@ -583,8 +753,13 @@
       const existingChart = Chart.getChart('taskProgressChart');
       if (existingChart) existingChart.destroy();
 
-      // Create new Doughnut chart
-      const ctx = document.getElementById('taskProgressChart').getContext('2d');
+      // Check if the canvas exists before proceeding
+      const chartCanvas = document.getElementById('taskProgressChart');
+      if (!chartCanvas) {
+        // Optionally, you could log a warning or show a fallback message here
+        return;
+      }
+      const ctx = chartCanvas.getContext('2d');
       new Chart(ctx, {
         type: 'doughnut',
         data: {
@@ -614,25 +789,75 @@
       });
 
       // Update custom legend
-      const legendContainer = document.getElementById('taskProgressLegend');
-      legendContainer.innerHTML = `
-        <div class="legend-item"><span class="legend-box" style="background-color: #2E7D32;"></span> Completed (${completedCount} tasks)</div>
-        <div class="legend-item"><span class="legend-box" style="background-color: #F9A825;"></span> In Progress (${inProgressCount} tasks)</div>
-        <div class="legend-item"><span class="legend-box" style="background-color: #F57C00;"></span> Pending (${pendingCount} tasks)</div>
-        <div class="legend-item"><span class="legend-box" style="background-color: #B0BEC5;"></span> Not Yet Started (${notYetStartedCount} tasks)</div>
-      `;
+      const legendContainer = document.getElementById('task-progress-legend');
+      if (legendContainer) {
+        legendContainer.innerHTML = `
+          <div class="legend-item"><span class="legend-box" style="background-color: #2E7D32;"></span> Completed (${completedCount} tasks)</div>
+          <div class="legend-item"><span class="legend-box" style="background-color: #F9A825;"></span> In Progress (${inProgressCount} tasks)</div>
+          <div class="legend-item"><span class="legend-box" style="background-color: #F57C00;"></span> Pending (${pendingCount} tasks)</div>
+          <div class="legend-item"><span class="legend-box" style="background-color: #B0BEC5;"></span> Not Yet Started (${notYetStartedCount} tasks)</div>
+        `;
+      }
+    }
+
+    // Populate teams dropdown
+    async function populateTeamsDropdown() {
+      try {
+        const response = await fetch('/api/teams', {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          credentials: 'include'
+        });
+        
+        if (!response.ok) {
+          throw new Error('Failed to fetch teams');
+        }
+        
+        const data = await response.json();
+        if (data.success) {
+          teams = data.data;
+          const teamSelect = document.getElementById('taskTeam');
+          if (teamSelect) {
+            teams.forEach(team => {
+              const option = document.createElement('option');
+              option.value = team._id;
+              option.textContent = team.name;
+              teamSelect.appendChild(option);
+            });
+          }
+        } else {
+          console.error('Failed to fetch teams:', data.message);
+        }
+      } catch (error) {
+        console.error('Error fetching teams:', error);
+      }
     }
 
     // Add task
     async function addTask() {
+      const teamSelect = document.getElementById('taskTeam');
+      const assignToGroup = document.getElementById('assignToGroup');
+      const assignedToInput = document.getElementById('assignedTo');
+      let teamId = teamSelect && teamSelect.value ? teamSelect.value : null;
+      let assignedToValue = assignedToInput && assignedToInput.value ? assignedToInput.value : null;
+
       const taskNameInput = document.getElementById('taskName');
       const startDateInput = document.getElementById('startDate');
       const deadlineInput = document.getElementById('deadline');
       const priorityInput = document.getElementById('priority');
-      const assignedToInput = document.getElementById('assignedTo');
       
       if (!taskNameInput.value || !startDateInput.value || !deadlineInput.value) {
         alert('Task name, start date, and end date are required!');
+        return;
+      }
+      if (teamSelect && !teamSelect.value) {
+        alert('Please select a team!');
+        return;
+      }
+      if (assignToGroup && assignToGroup.style.display !== 'none' && (!assignedToInput.value || assignedToInput.value === '')) {
+        alert('Please select a team member!');
         return;
       }
       
@@ -640,14 +865,15 @@
         const taskData = {
           name: taskNameInput.value,
           priority: priorityInput.value,
+          teamId: teamId,
           startDate: startDateInput.value,
           deadline: deadlineInput.value,
           completed: false
         };
         
-        // If we're not in 'my' view and an assignee is selected
-        if (currentView !== 'my' && assignedToInput.value) {
-          const [name, email] = assignedToInput.value.split('|');
+        // Assign member if selected
+        if (assignedToValue) {
+          const [name, email] = assignedToValue.split('|');
           taskData.assignedTo = { name, email };
         }
         
@@ -727,7 +953,11 @@
             name: newName,
             startDate: newStartDate,
             deadline: newDeadline,
-            priority: newPriority
+            priority: newPriority,
+            assignedTo: {
+              name: task.assignedTo && task.assignedTo.name ? task.assignedTo.name : (typeof task.assignedTo === 'string' ? task.assignedTo : ''),
+              email: task.assignedToEmail || (task.assignedTo && task.assignedTo.email ? task.assignedTo.email : '')
+            }
           };
 
           const response = await fetch(`/api/tasks/${currentTaskId}`, {
@@ -771,7 +1001,11 @@
         
         const updatedTask = {
           ...task,
-          completed: !task.completed
+          completed: !task.completed,
+          assignedTo: {
+            name: task.assignedTo && task.assignedTo.name ? task.assignedTo.name : (typeof task.assignedTo === 'string' ? task.assignedTo : ''),
+            email: task.assignedTo && task.assignedTo.email ? task.assignedTo.email : ''
+          }
         };
         
         const response = await fetch(`/api/tasks/${currentTaskId}`, {
@@ -840,6 +1074,69 @@
       }
     }
     
+    // Populate Teams dropdown in Add Task widget
+    async function populateTeamsDropdown() {
+      const teamSelect = document.getElementById('taskTeam');
+      if (!teamSelect) return;
+      try {
+        const response = await fetch('/api/teams', {
+          method: 'GET',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include'
+        });
+        if (!response.ok) throw new Error('Failed to fetch teams');
+        const data = await response.json();
+        if (data.success) {
+          teamSelect.innerHTML = '<option value="">Select team</option>';
+          data.data.forEach(team => {
+            const option = document.createElement('option');
+            option.value = team._id;
+            option.textContent = team.name;
+            teamSelect.appendChild(option);
+          });
+        }
+      } catch (e) {
+        console.error('Error populating teams dropdown:', e);
+      }
+    }
+
+    // When a team is selected in Add Task, fetch members and populate member dropdown
+    async function onTaskTeamChange() {
+      const teamSelect = document.getElementById('taskTeam');
+      const assignToGroup = document.getElementById('assignToGroup');
+      const memberSelect = document.getElementById('assignedTo');
+      if (!teamSelect || !assignToGroup || !memberSelect) return;
+      if (!teamSelect.value) {
+        assignToGroup.style.display = 'none';
+        memberSelect.innerHTML = '<option value="">Select team member</option>';
+        return;
+      }
+      try {
+        const response = await fetch(`/api/teams/${teamSelect.value}/members`, {
+          method: 'GET',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include'
+        });
+        if (!response.ok) throw new Error('Failed to fetch members');
+        const data = await response.json();
+        if (data.success) {
+          memberSelect.innerHTML = '<option value="">Select team member</option>';
+          data.data.forEach(member => {
+            const option = document.createElement('option');
+            option.value = `${member.name}|${member.email}`;
+            option.textContent = member.name;
+            memberSelect.appendChild(option);
+          });
+          assignToGroup.style.display = 'block';
+        } else {
+          assignToGroup.style.display = 'none';
+        }
+      } catch (e) {
+        console.error('Error loading team members:', e);
+        assignToGroup.style.display = 'none';
+      }
+    }
+
     // Helper function to format date
     function formatDate(date) {
       const month = date.toLocaleString('default', { month: 'short' });
@@ -1148,6 +1445,7 @@
         alert(`Error creating team: ${error.message}`);
       }
     }
+    console.log('Dashboard page loaded');
   </script>
   <style>
     /* Style for Add Task button */
