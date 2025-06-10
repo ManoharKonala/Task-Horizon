@@ -103,7 +103,7 @@ Below are screenshots of the Task Horizon dashboard and features:
 
 ![Dashboard Overview](public/Screenshoots.png/Screenshot%202025-06-10%20095928.png)
 ![Task List View](public/Screenshoots.png/Screenshot%202025-06-10%20100700.png)
-![Neon Theme Example](public/Screenshoots.png/screenshots.png)
+
 
 ## API Documentation
 
