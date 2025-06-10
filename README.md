@@ -1,4 +1,3 @@
-
 <h1 align="center">🚀 Task Horizon</h1>
 Task Horizon is a modern task management dashboard application built to help users organize, track, and manage tasks efficiently. With a sleek neon-themed interface, interactive widgets, and real-time updates, it provides an intuitive experience for both individual and team task management.
 
@@ -8,6 +7,7 @@ Task Horizon is a modern task management dashboard application built to help use
 - [Installation](#installation)
 - [Usage](#usage)
 - [Screenshots](#screenshots)
+- [API Documentation](#api-documentation)
 - [Contributing](#contributing)
 - [License](#license)
 - [Contact](#contact)
@@ -99,18 +99,99 @@ This application assumes a backend API for data persistence and user management.
 ```
 ## Screenshots
 
-## Setup
-1. Install dependencies: `npm install`
-2. Set up MongoDB Atlas:
-   - Create a cluster and database user.
-   - Configure network access (Allow Access From Anywhere for development).
-   - Copy the connection string and add it to `.env` as `ATLAS_URI`.
-3. Configure email:
-   - Add `EMAIL_USER` and `EMAIL_PASS` (app password for Gmail) to `.env`.
-4. Run locally: `npm run dev`
-5. Deploy:
-   - Back-end: Push to Heroku with a `Procfile` (web: node server/server.js).
-   - Front-end: Deploy `/public` to Vercel.
+Below are screenshots of the Task Horizon dashboard and features:
+
+![Dashboard Overview](public/Screenshoots.png/Screenshot%202025-06-10%20095928.png)
+![Task List View](public/Screenshoots.png/Screenshot%202025-06-10%20100700.png)
+![Neon Theme Example](public/Screenshoots.png/screenshots.png)
+
+## API Documentation
+
+### Authentication
+
+#### POST /api/auth/signup
+- Register a new user.
+- Body: `{ name, email, password }`
+- Response: `{ success, message }`
+
+#### POST /api/auth/login
+- Log in a user.
+- Body: `{ email, password }`
+- Response: `{ success, message, user }`
+
+#### GET /api/auth/user
+- Get the currently authenticated user.
+- Response: `{ success, user }`
+
+#### GET /api/auth/logout
+- Log out the current user.
+- Response: `{ success, message }`
+
+---
+
+### Tasks
+
+#### POST /api/tasks
+- Create a new task.
+- Body: `{ name, priority, startDate, deadline, assignedTo (optional) }`
+- Response: `{ success, data: task }`
+
+#### GET /api/tasks
+- Get all tasks for the authenticated user (owned or assigned).
+- Response: `{ success, data: [tasks] }`
+
+#### PUT /api/tasks/:id
+- Update a task (owner only).
+- Body: `{ name, priority, startDate, deadline, assignedTo (optional) }`
+- Response: `{ success, data: task }`
+
+#### DELETE /api/tasks/:id
+- Delete a task (owner only).
+- Response: `{ success, message }`
+
+#### PUT /api/tasks/:id/toggle-completion
+- Toggle completion status of a task (owner or assignee).
+- Body: `{ completed: true|false }`
+- Response: `{ success, data: task }`
+
+---
+
+### Teams
+
+#### POST /api/teams
+- Create a new team.
+- Body: `{ name, description (optional) }`
+- Response: `{ success, data: team }`
+
+#### GET /api/teams
+- Get all teams created by the user.
+- Response: `{ success, data: [teams] }`
+
+#### PUT /api/teams/:id
+- Update a team (owner only).
+- Body: `{ name, description }`
+- Response: `{ success, data: team }`
+
+#### DELETE /api/teams/:id
+- Delete a team (owner only).
+- Response: `{ success, message }`
+
+#### GET /api/teams/:id/members
+- Get all members of a team.
+- Response: `{ success, data: [members] }`
+
+#### POST /api/teams/:id/members
+- Add a member to a team.
+- Body: `{ name, email }`
+- Response: `{ success, data: [members] }`
+
+#### DELETE /api/teams/:id/members/:memberId
+- Remove a member from a team.
+- Response: `{ success, data: [members] }`
+
+---
+
+For all endpoints, authentication is required unless otherwise noted. All responses are JSON.
 
 ## License
 This project is licensed under the [MIT License](LICENSE). See the `LICENSE` file for details.
